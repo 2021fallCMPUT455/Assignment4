@@ -588,19 +588,8 @@ class SimpleGoBoard(object):
         return potential_move_dict
 
     def mapping_all_heuristic(self, color):
-        '''
-        opponent = WHITE + BLACK - color
-
-        player_dict = self.mapping_player_heuristic(color)
-        opponent_dict = self.mapping_player_heuristic(opponent)
-
-        player_dict = dict(
-            sorted(player_dict.items(), key=lambda item: item[1]))
-        opponent_dict = dict(
-            sorted(opponent_dict.items(), key=lambda item: item[1]))
-
-        return player_dict, opponent_dict
-        '''
+        ret = self.get_pattern_moves()
+        movetype_id, moves=ret
     def alphabeta(self, color, alpha, beta, current_depth):
         player_dict, opponent_dict = self.mapping_all_heuristic(color)
         color_point = []

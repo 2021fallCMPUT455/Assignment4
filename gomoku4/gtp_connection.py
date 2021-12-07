@@ -56,7 +56,8 @@ class GtpConnection():
             "solve": self.solve_cmd,
             "list_solve_point": self.list_solve_point_cmd, # below is added for Gomoku3
             "policy": self.set_playout_policy, 
-            "policy_moves": self.display_pattern_moves
+            "policy_moves": self.display_pattern_moves,
+            "player_moves": self.display_player_moves
         }
         self.timelimit=2
 
@@ -73,6 +74,9 @@ class GtpConnection():
             "policy":(1, 'Usage: set playout policy {random, rule_based}')
         }
     
+    def display_player_moves(self, args):
+        pass
+
     def set_playout_policy(self, args):
         playout_policy=args[0]
         self.go_engine.set_playout_policy(playout_policy)

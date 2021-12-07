@@ -6,9 +6,9 @@ from gtp_connection import GtpConnection
 from board_util import GoBoardUtil, EMPTY
 from simple_board import SimpleGoBoard
 
-import random
+import random, time
 import numpy as np
-timeout = timie.time() + 59 
+timeout = time.time() + 59 
 
 def undo(board,move):
     board.board[move]=EMPTY
