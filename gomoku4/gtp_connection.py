@@ -75,7 +75,7 @@ class GtpConnection():
         }
     
     def display_player_moves(self, args):
-        pass
+        self.board.mapping_all_heuristic()
 
     def set_playout_policy(self, args):
         playout_policy=args[0]

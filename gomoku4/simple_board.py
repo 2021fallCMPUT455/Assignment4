@@ -14,6 +14,7 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, \
                        PASS, is_black_white, coord_to_point, where1d, \
                        MAXSIZE, NULLPOINT
 import alphabeta
+import random
 
 class SimpleGoBoard(object):
 
@@ -439,7 +440,7 @@ class SimpleGoBoard(object):
             return winner, move
 
     def check_pattern(self,point,have,direction_x,direction_y,moveSet,patternList,color,flag):
-        for i in range(0,4):
+        for i in range(6):
             if have in patternList[i]:
                 for dis in patternList[i][have]:
                     moveSet[i].add(point-direction_x*(dis+1)-direction_y*self.NS*(dis+1))
@@ -468,15 +469,15 @@ class SimpleGoBoard(object):
         2. urgent blocking point xoooo.
         3. wining in 2 step point
         """
-        moveSet=[set(),set(),set(),set()]
+        moveSet=[set(),set(),set(),set(), set(), set()]
         color=self.current_player
 
         patternList=[{'xxxx.':{0},'xxx.x':{1},'xx.xx':{2},'x.xxx':{3},'.xxxx':{4}}, #win
-                     {'oooo.':{0},'ooo.o':{1},'oo.oo':{2},'o.ooo':{3},'.oooo':{4}}, #block win
-                     {'.xxx..':{1},'..xxx.':{4},'.xx.x.':{2},'.x.xx.':{3}}, #make-four
-                     {'.ooo..':{1,5},'..ooo.':{0,4},'.oo.o.':{0,2,5},'.o.oo.':{0,3,5}, 'B.ooo..':{0}, '..ooo.B':{6},
-                     'x.ooo..':{0}, '..ooo.x':{6} #block-open-four
-                     }]
+                    {'oooo.':{0},'ooo.o':{1},'oo.oo':{2},'o.ooo':{3},'.oooo':{4}}, #block win
+                    {'.xxx..':{1},'..xxx.':{4},'.xx.x.':{2},'.x.xx.':{3}},
+                    {'.ooo..':{1,5},'..ooo.':{0,4},'.oo.o.':{0,2,5},'.o.oo.':{0,3,5}, 'B.ooo..':{0}, '..ooo.B':{6},'x.ooo..':{0}, '..ooo.x':{6}},
+                    {'.xx...':{2}, '..xx..':{1,4}, '...xx.':{3}, '.x.x..':{3}, '..x.x.':{2}, 'B.xx...':{2}, 'B..xx..':{1, 4}, 'B...xx.':{3}, 'B.x.x..':{3}, 'B..x.x.':{2}, '.xx...B':{2}, '..xx..B':{1,4}, '...xx.B':{3}, '.x.x..B':{3}, '..x.x.B':{2}, 'o.xx...':{2}, 'o..xx..':{1, 4}, 'o...xx.':{3}, 'o.x.x..':{3}, 'o..x.x.':{2}, '.xx...o':{2}, '..xx..o':{1,4}, '...xx.o':{3}, '.x.x..o':{3}, '..x.x.o':{2}},
+                    {'.oo...':{2,5}, '..oo..':{1,4}, '...oo.':{0,3}, '.o.o..':{1,3,5}, '..o.o.': {0,2,4}, 'B.oo...': {0}, 'B..oo..':{0}, 'B...oo.':{0}, 'B.o.o..':{0,3}, 'B..o.o.':{0,2}, '...oo.B':{5}, '..oo..B':{5}, '.oo...B':{5}, '..o.o.B':{2,5}, '.o.o..B':{3,5}, 'x.oo...': {0}, 'x..oo..':{0}, 'x...oo.':{0}, 'x.o.o..':{0,3}, 'x..o.o.':{0,2}, '...oo.x':{5}, '..oo..x':{5}, '.oo...x':{5}, '..o.o.x':{2,5}, '.o.o..x':{3,5}}]
 
         direction_x=[1,0,1,-1]
         direction_y=[0,1,1,1]
@@ -488,23 +489,25 @@ class SimpleGoBoard(object):
             for direction in range(0,4):
                     self.check_pattern(point,'',direction_x[direction],direction_y[direction],moveSet,patternList,color,flag)
         
+        total_move_set = {}
         i=0
-        while i<4 and not bool(moveSet[i]): i+=1
-        if i==4:
+        while i<6 and not bool(moveSet[i]): i+=1
+        if i==6:
             return None
         else:
-            return i, list(moveSet[i])
-            
+            total_move_set[i] = moveSet[i]
+            #return i, list(moveSet[i])
+        return moveSet
     def list_solve_point(self):
         """
         1. direct winning point xxxx. x.xxx xx.xx
         2. urgent blocking point xoooo.
         3. wining in 2 step point
         """
-        moveSet=[set(),set(),set(),set()]
+        moveSet=[set(),set(),set(),set(), set(), set()]
         color=self.current_player
 
-        patternList=[{'xxxx.':{0},'xxx.x':{1},'xx.xx':{2},'x.xxx':{3},'.xxxx':{4}},{'oooo.':{0},'ooo.o':{1},'oo.oo':{2},'o.ooo':{3},'.oooo':{4}},{'.xxx..':{1},'..xxx.':{4},'.xx.x.':{2},'.x.xx.':{3}},{'.ooo..':{1,5},'..ooo.':{0,4},'.oo.o.':{2},'.o.oo.':{3}}]
+        patternList=[{'xxxx.':{0},'xxx.x':{1},'xx.xx':{2},'x.xxx':{3},'.xxxx':{4}},{'oooo.':{0},'ooo.o':{1},'oo.oo':{2},'o.ooo':{3},'.oooo':{4}},{'.xxx..':{1},'..xxx.':{4},'.xx.x.':{2},'.x.xx.':{3}},{'.ooo..':{1,5},'..ooo.':{0,4},'.oo.o.':{2},'.o.oo.':{3}}, {'.xx...':{2}, '..xx..':{1,4}, '...xx.':{3}, '.x.x..':{3}, '..x.x.':{2}}, {'.oo...':{2,5}, '..oo..':{1,4}, '...oo.':{0,3}, '.o.o..':{1,3,5}, '..o.o.': {0,2,4}}]
 
         direction_x=[1,0,1,-1]
         direction_y=[0,1,1,1]
@@ -517,12 +520,14 @@ class SimpleGoBoard(object):
                     self.check_pattern(point,'',direction_x[direction],direction_y[direction],moveSet,patternList,color,flag)
         
         i=0
-        while i<4 and not bool(moveSet[i]):
+        while i<6 and not bool(moveSet[i]):
             i+=1
-        if i==4:
+        if i==6:
             return None
         else:
-            return list(moveSet[i])
+            #return list(moveSet[i])
+            pass
+        return moveSet
 #
 #
 #
@@ -587,9 +592,22 @@ class SimpleGoBoard(object):
         
         return potential_move_dict
 
-    def mapping_all_heuristic(self, color):
+    def mapping_all_heuristic(self):
+        opponent = WHITE + BLACK - self.current_player
         ret = self.get_pattern_moves()
-        movetype_id, moves=ret
+        open_four = ret[0]
+        open_four_opponent = ret[1]
+        open_three = ret[2]
+        open_three_oponent = ret[3]
+        open_two = ret[4]
+        open_two_opponent = ret[5]
+        print(open_four)
+        print(open_four_opponent)
+        print(open_three)
+        print(open_three_oponent)
+        print(open_two)
+        print(open_two_opponent)
+
     def alphabeta(self, color, alpha, beta, current_depth):
         player_dict, opponent_dict = self.mapping_all_heuristic(color)
         color_point = []
@@ -701,3 +719,73 @@ class SimpleGoBoard(object):
             # There is no wining move for player right now.
             self.decide_winner()
             return [self.winner_char]
+
+    def find_all_potential_moves(self, simulation_amount):
+        
+        color = self.current_player
+        opponent = opponent = WHITE + BLACK - color
+        potential_moves = self.get_empty_points().tolist()
+        random.shuffle(potential_moves)
+        move_list = 'Random'
+        win_rate_dictionary = {}
+        for move in potential_moves:
+            move_list += (' ' + str(move))
+            #self.play_move(move, self.current_player)
+            self.board[move] = color
+            if self.detect_five_in_a_row() == color:
+                win_rate_dictionary[move] = 1.0
+            elif len(self.get_empty_points().tolist()) == 0:
+                win_rate_dictionary[move] = 0
+            else:
+                win = 0
+                loss = 0
+                for n_th in range(simulation_amount):
+                    winner = self.random_policy(opponent)
+                    
+                    if winner == color:
+                        win += 1
+                    elif winner == opponent:
+                        loss += 1
+                #self.board[move] = EMPTY
+                win_rate = win / simulation_amount
+                win_rate_dictionary[move] = win_rate
+            self.board[move] = EMPTY
+        win_rate_dictionary = dict( sorted(win_rate_dictionary.items(),
+                           key=lambda item: item[1],
+                           reverse=True))
+        best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
+        print(win_rate_dictionary)
+        #self.board[best_move] = color
+        return best_move, win_rate_dictionary[best_move]
+
+    def random_policy(self, opponent):
+        color = opponent
+        empty_points = self.get_empty_points().tolist()
+        made_move_list = []
+        random.shuffle(empty_points)
+        '''
+        current_move = 0
+        winner = EMPTY
+        while winner == EMPTY and len(empty_points) != 0:
+            current_move = empty_points[0]
+            self.play_move(current_move, self.current_player)
+            
+            made_move = empty_points.pop(0)
+            made_move_list.append(made_move)
+            winner = self.detect_five_in_a_row()
+        '''
+        winner = self.detect_five_in_a_row()
+        for empty_point in empty_points:
+            #self.play_move(empty_point, self.current_player)
+            self.board[empty_point] = color
+            made_move_list.append(empty_point)
+            winner = self.detect_five_in_a_row()
+            if color == BLACK:
+                color = WHITE
+            elif color == WHITE:
+                color = BLACK
+            if winner != EMPTY:
+                self.undo_all_move(made_move_list)
+                break
+        self.undo_all_move(made_move_list)
+        return winner
