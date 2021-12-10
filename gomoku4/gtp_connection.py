@@ -13,7 +13,7 @@ from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS, \
 import numpy as np
 import re
 import signal
-
+import time
 class GtpConnection():
 
     def __init__(self, go_engine, board, debug_mode = False):
@@ -30,6 +30,7 @@ class GtpConnection():
         self._debug_mode = debug_mode
         self.go_engine = go_engine
         self.board = board
+        self.genmoveCalled = False
         signal.signal(signal.SIGALRM, self.handler)
         self.commands = {
             "protocol_version": self.protocol_version_cmd,
@@ -57,7 +58,8 @@ class GtpConnection():
             "list_solve_point": self.list_solve_point_cmd, # below is added for Gomoku3
             "policy": self.set_playout_policy, 
             "policy_moves": self.display_pattern_moves,
-            "player_moves": self.display_player_moves
+            "player_moves": self.display_player_moves,
+            
         }
         self.timelimit=2
 
@@ -75,7 +77,8 @@ class GtpConnection():
         }
     
     def display_player_moves(self, args):
-        self.board.mapping_all_heuristic()
+        color = self.board.current_player
+        self.board.mapping_all_heuristic(color)
 
     def set_playout_policy(self, args):
         playout_policy=args[0]
@@ -292,6 +295,16 @@ class GtpConnection():
         self.board = self.sboard
         raise Exception("unknown")
 
+    def transform_int_position_to_char(self, point):
+        y = point % self.board.NS
+        x = point // self.board.NS
+        column_letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+
+        column_letter = column_letters[y - 1]
+        row = x
+
+        return column_letter + str(row)
+    '''
     def solve_cmd(self, args):
         try:
             self.sboard = self.board.copy()
@@ -308,7 +321,36 @@ class GtpConnection():
             self.respond('{}'.format(winner))
         except Exception as e:
             self.respond('{}'.format(str(e)))
+    '''
 
+
+    def solve_cmd(self, args):
+        
+        
+       
+        answer = self.board.build_tree()
+        
+        
+        
+        color = ""
+        
+        if len(answer) == 2:
+            if( not self.genmoveCalled ):
+                
+                self.respond("{winner} {move}".format(
+                    winner=answer[0], move=self.transform_int_position_to_char(answer[1])))
+
+            elif( self.genmoveCalled ):
+                return [answer[0],self.transform_int_position_to_char(answer[1])]
+            
+        elif len(answer) == 1:
+            
+            if( not self.genmoveCalled ):
+                self.respond(answer[0])
+            elif( self.genmoveCalled ):
+                return answer[0]
+            
+    '''
     def genmove_cmd(self, args):
         """
         Generate a move for the color args[0] in {'b', 'w'}, for the game of gomoku.
@@ -347,7 +389,50 @@ class GtpConnection():
             self.respond(move_as_string)
         else:
             self.respond("illegal move: {}".format(move_as_string))
+    '''
+    def genmove_cmd(self, args):
+        """
+        Generate a move for the color args[0] in {'b', 'w'}, for the game of gomoku.
+        """
+        end, result = self.board.check_game_end_gomoku()
+        if result == GoBoardUtil.opponent(self.board.current_player):
+            self.respond("resign")
+            return
+        if self.board.get_empty_points().size == 0:
+            self.respond("pass")
+            return
 
+        self.genmoveCalled = True
+        answer = self.solve_cmd(args)
+        self.genmoveCalled = False
+        # print(answer)
+        toPlay = 'b'
+        if( self.board.current_player == 2 ):
+            toPlay = 'w'
+        # print(toPlay)
+        if answer[0] == toPlay :
+            # print(answer)
+            self.respond(answer[1])
+        elif( answer[0] == 'unknown' ):
+            # print('ran out of time')
+            board_color = args[0].lower()
+            color = color_to_int(board_color)
+            move = self.go_engine.get_move(self.board, color)
+            move_coord = point_to_coord(move, self.board.size)
+            move_as_string = format_point(move_coord)
+            self.board.play_move(move, color)
+            self.respond(move_as_string)
+        elif answer[0] == 'draw':
+            self.respond(answer[1])
+        elif answer[0] != toPlay:
+            # print('toPlay is losing')
+            board_color = args[0].lower()
+            color = color_to_int(board_color)
+            move = self.go_engine.get_move(self.board, color)
+            move_coord = point_to_coord(move, self.board.size)
+            move_as_string = format_point(move_coord)
+            self.board.play_move(move, color)
+            self.respond(move_as_string)
     def gogui_rules_game_id_cmd(self, args):
         self.respond("Gomoku")
     
@@ -484,3 +569,4 @@ def color_to_int(c):
     color_to_int = {"b": BLACK , "w": WHITE, "e": EMPTY, 
                     "BORDER": BORDER}
     return color_to_int[c] 
+

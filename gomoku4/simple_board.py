@@ -17,6 +17,8 @@ import alphabeta
 import random
 import operator
 
+simulation_amount = 1
+
 class SimpleGoBoard(object):
 
     def get_color(self, point):
@@ -449,7 +451,7 @@ class SimpleGoBoard(object):
             return winner, move
 
     def check_pattern(self,point,have,direction_x,direction_y,moveSet,patternList,color,flag):
-        for i in range(6):
+        for i in range(7):
             if have in patternList[i]:
                 for dis in patternList[i][have]:
                     moveSet[i].add(point-direction_x*(dis+1)-direction_y*self.NS*(dis+1))
@@ -478,15 +480,16 @@ class SimpleGoBoard(object):
         2. urgent blocking point xoooo.
         3. wining in 2 step point
         """
-        moveSet=[set(),set(),set(),set(), set(), set()]
+        moveSet=[set(),set(),set(),set(), set(), set(), set()]
         color=self.current_player
 
         patternList=[{'xxxx.':{0},'xxx.x':{1},'xx.xx':{2},'x.xxx':{3},'.xxxx':{4}}, #win
                     {'oooo.':{0},'ooo.o':{1},'oo.oo':{2},'o.ooo':{3},'.oooo':{4}}, #block win
                     {'.xxx..':{1},'..xxx.':{4},'.xx.x.':{2},'.x.xx.':{3}},
-                    {'.ooo..':{1,5},'..ooo.':{0,4},'.oo.o.':{0,2,5},'.o.oo.':{0,3,5}, 'B.ooo..':{0}, '..ooo.B':{6},'x.ooo..':{0}, '..ooo.x':{6}},
+                    {'.ooo..':{1,5},'..ooo.':{0,4},'.oo.o.':{0,2,5},'.o.oo.':{0,3,5}},
                     {'.xx...':{2}, '..xx..':{1,4}, '...xx.':{3}, '.x.x..':{3}, '..x.x.':{2}},
-                    {'.oo...':{2,5}, '..oo..':{1,4}, '...oo.':{0,3}, '.o.o..':{1,3,5}, '..o.o.': {0,2,4}}]
+                    {'.oo...':{2,5}, '..oo..':{1,4}, '...oo.':{0,3}, '.o.o..':{1,3,5}, '..o.o.': {0,2,4}},
+                    {'.......':{3}}]
                     #{'.xx...':{2}, '..xx..':{1,4}, '...xx.':{3}, '.x.x..':{3}, '..x.x.':{2}, 'B.xx...':{2}, 'B..xx..':{1, 4}, 'B...xx.':{3}, 'B.x.x..':{3}, 'B..x.x.':{2}, '.xx...B':{2}, '..xx..B':{1,4}, '...xx.B':{3}, '.x.x..B':{3}, '..x.x.B':{2}, 'o.xx...':{2}, 'o..xx..':{1, 4}, 'o...xx.':{3}, 'o.x.x..':{3}, 'o..x.x.':{2}, '.xx...o':{2}, '..xx..o':{1,4}, '...xx.o':{3}, '.x.x..o':{3}, '..x.x.o':{2}},
                     #{'.oo...':{2,5}, '..oo..':{1,4}, '...oo.':{0,3}, '.o.o..':{1,3,5}, '..o.o.': {0,2,4}, 'B.oo...': {0}, 'B..oo..':{0}, 'B...oo.':{0}, 'B.o.o..':{0,3}, 'B..o.o.':{0,2}, '...oo.B':{5}, '..oo..B':{5}, '.oo...B':{5}, '..o.o.B':{2,5}, '.o.o..B':{3,5}, 'x.oo...': {0}, 'x..oo..':{0}, 'x...oo.':{0}, 'x.o.o..':{0,3}, 'x..o.o.':{0,2}, '...oo.x':{5}, '..oo..x':{5}, '.oo...x':{5}, '..o.o.x':{2,5}, '.o.o..x':{3,5}}]
 #{33, 36, 38, 44, 49, 17, 20, 21, 22, 30, 25, 26, 28, 62}
@@ -503,8 +506,8 @@ class SimpleGoBoard(object):
         
         total_move_set = {}
         i=0
-        while i<6 and not bool(moveSet[i]): i+=1
-        if i==6:
+        while i<7 and not bool(moveSet[i]): i+=1
+        if i==7:
             return None
         else:
             total_move_set[i] = moveSet[i]
@@ -545,6 +548,12 @@ class SimpleGoBoard(object):
             #return list(moveSet[i])
             pass
         return moveSet
+
+    def undo_all_move(self, point_list):
+        for point in point_list:
+            self.board[point] = EMPTY
+
+    
 #
 #
 #
@@ -609,69 +618,17 @@ class SimpleGoBoard(object):
         
         return potential_move_dict
 
-    def mapping_all_heuristic(self, color):
-        self.current_player = color
-        player_stone_list = [point for point in where1d(self.board == self.current_player)]
-        opponent = WHITE + BLACK - self.current_player
-        opponent_stone_list = [point for point in where1d(self.board == opponent)]
-        open_one = []
-        
-
-        four_three_dict = {}
-        two_one_dict = {}
-        ret = self.get_pattern_moves()
-        open_four = ret[0]
-        open_four_opponent = ret[1]
-        open_three = ret[2]
-        open_three_oponent = ret[3]
-        open_two = ret[4]
-        open_two_opponent = ret[5]
-
-        for position in open_four:
-            four_three_dict[position] = 4
-        for position in open_four_opponent:
-            four_three_dict[position] = 3.5
-        for position in open_three:
-            four_three_dict[position] = 3
-        for position in open_three_oponent:
-            four_three_dict[position] = 2.5
-        for position in open_two:
-            two_one_dict[position] = 2
-        for position in open_two_opponent:
-            two_one_dict[position] = 1.5
-        for point in player_stone_list:
-            empty_point_list = self.find_neighbor_of_empty(point)
-            for point in empty_point_list:
-                if point not in list(four_three_dict.keys()) and point not in list(two_one_dict.keys()):
-                    two_one_dict[point] = 1
-        for point in opponent_stone_list:
-            empty_point_list = self.find_neighbor_of_empty(point)
-            for point in empty_point_list:
-                if point not in list(four_three_dict.keys()) and point not in list(two_one_dict.keys()):
-                    two_one_dict[point] = 0.5
-            
-        four_three_dict = dict(sorted(four_three_dict.items(), key=operator.itemgetter(1), reverse=True))
-
-        print(open_four)
-        print(open_four_opponent)
-        print(open_three)
-        print(open_three_oponent)
-        print(open_two)
-        print(open_two_opponent)
-        
-        return four_three_dict, two_one_dict
-
-    def sort_two_one_dict(self, dictionary, color, simulation_amount):
+    def sort_two_one_zero_dict(self, dictionary, color, simulation_amount):
             
         opponent = WHITE + BLACK - color
-        
-        
+        new_dictionary = {}
         win_rate_dictionary = {}
         for move, value in dictionary.items():
             
             #self.play_move(move, self.current_player)
             self.board[move] = color
-            if self.detect_five_in_a_row() == color:
+            end, winner_color = self.check_game_end_gomoku()
+            if winner_color == color:
                 win_rate_dictionary[move] = 1.0
             elif len(self.get_empty_points().tolist()) == 0:
                 win_rate_dictionary[move] = 0
@@ -694,21 +651,107 @@ class SimpleGoBoard(object):
         # #
         # #    
         win_rate_dictionary = dict( sorted(win_rate_dictionary.items(),
-                           key=lambda item: item[1],
-                           reverse=True))
+                           key=lambda item: item[1], reverse=True))
+        
+        for position, value in win_rate_dictionary.items():
+            new_dictionary[position] = dictionary[position]
+
         best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
-        print(win_rate_dictionary)
+        #print('win rate: ' +str(win_rate_dictionary))
         #self.board[best_move] = color
-        return best_move, win_rate_dictionary[best_move]
+        return win_rate_dictionary, new_dictionary
+    def mapping_all_heuristic(self, color):
+        self.current_player = color
+        player_stone_list = [point for point in where1d(self.board == self.current_player)]
+        opponent = WHITE + BLACK - self.current_player
+        opponent_stone_list = [point for point in where1d(self.board == opponent)]
+       
+        
+
+        four_three_dict = {}
+        two_one_zero_dict = {}
+        ret = self.get_pattern_moves()
+        open_four = ret[0]
+        open_four_opponent = ret[1]
+        open_three = ret[2]
+        open_three_oponent = ret[3]
+        open_two = ret[4]
+        open_two_opponent = ret[5]
+
+        ret_6_list = list(ret[6])
+        
+        random.shuffle(ret_6_list)
+        open_zero = ret_6_list
+        
+        
+        
+        
+        for position in open_zero:
+            two_one_zero_dict[position] = 0.1
+        for point in player_stone_list:
+            empty_point_list = self.find_neighbor_of_empty(point)
+            for point in empty_point_list:
+                if point not in list(four_three_dict.keys()) and point not in list(two_one_zero_dict.keys()):
+                    two_one_zero_dict[point] = 1
+        for point in opponent_stone_list:
+            empty_point_list = self.find_neighbor_of_empty(point)
+            for point in empty_point_list:
+                if point not in list(four_three_dict.keys()) and point not in list(two_one_zero_dict.keys()):
+                    two_one_zero_dict[point] = 0.5
+        for position in open_two_opponent:
+            two_one_zero_dict[position] = 1.5
+        for position in open_two:
+            two_one_zero_dict[position] = 2
+        for position in open_three_oponent:
+            four_three_dict[position] = 2.5
+        for position in open_three:
+            four_three_dict[position] = 3
+        for position in open_four_opponent:
+            four_three_dict[position] = 3.5
+        for position in open_four:
+            four_three_dict[position] = 4
+
+        four_three_dict = dict(sorted(four_three_dict.items(), key=operator.itemgetter(1), reverse=True))
+        '''
+        print(open_four)
+        print(open_four_opponent)
+        print(open_three)
+        print(open_three_oponent)
+        print(open_two)
+        print(open_two_opponent)
+        print(open_zero)
+        '''
+        
+        
+        return four_three_dict, two_one_zero_dict
+
+    
 
     def alphabeta(self, color, alpha, beta, current_depth):
-        four_three_dict, two_one_dict = self.mapping_all_heuristic(color)
-        
-        
 
+        four_three_dict, two_one_zero_dict = self.mapping_all_heuristic(color)
+        player_dict = four_three_dict.copy()
+        if len(four_three_dict) == 0:
+            win_rate_dictionary, two_one_zero_dict =  self.sort_two_one_zero_dict(two_one_zero_dict, color, simulation_amount)
+            for key, priority in two_one_zero_dict.items():
+                if key not in list(player_dict.keys()):
+                    player_dict[key] = priority
+        if len(player_dict) == 0:
+            empty_stone_list = [point for point in where1d(self.board == EMPTY)]
+            for empty_spot in empty_stone_list:
+                if empty_spot not in list(player_dict.keys()):
+                    player_dict[empty_spot] = 0
+        if len(four_three_dict) == 0 and all(value == 0 for value in win_rate_dictionary.values()):
+            return -1
+
+        #print(str(color) + 'play dict: ' + str(player_dict))
+        #player_dict = dict(sorted(player_dict.items(), key=operator.itemgetter(1), reverse=True))
         
+        #
+        #
+        #
+
         opponent = WHITE + BLACK - color
-        
         self.winning_move = None
         _, winner_color = self.check_game_end_gomoku()
         if winner_color == color:
@@ -722,9 +765,7 @@ class SimpleGoBoard(object):
             return 0
 
         for location, location_value in player_dict.items():
-            if location_value > 2:
-                self.board[location] = color
-            
+            self.board[location] = color
             self.checked_move.append((color, location))
             value = -self.alphabeta(opponent, -beta, -alpha, current_depth + 1)
 
@@ -738,7 +779,7 @@ class SimpleGoBoard(object):
             self.board[location] = EMPTY
             if value >= beta:
                 return beta
-
+        
         return alpha
 
     def decide_winner(self):
@@ -760,29 +801,43 @@ class SimpleGoBoard(object):
                                   alpha=-1,
                                   beta=1,
                                   current_depth=0)
+        print('Got a location')
         if location > 0:
             # The location is a winning move
             self.decide_winner()
             try:
+                print('The winner is ' + str(self.winner_char) + ' ' +str(self.winning_move))
                 return [self.winner_char, self.winning_move]
             except AttributeError:
                 return [self.winner_char]
         elif location == 0:
             # This is a draw or the program reachs the time limit.
-            opponent = opponent = WHITE + BLACK - self.current_player
-            player_dict, opponent_dict = self.mapping_all_heuristic(opponent)
+            opponent = WHITE + BLACK - self.current_player
+            four_three_dict, two_one_zero_dict = self.mapping_all_heuristic(self.current_player)
+            '''
             player_key, player_value = max(player_dict.items(),
                                            key=lambda p: p[1])
             opponent_key, opponent_value = max(opponent_dict.items(),
                                                key=lambda p: p[1])
+            print('It is a draw.')
             if opponent_value > player_value:
                 return ['draw', opponent_key]
             else:
                 return ['draw', player_key]
-
+            '''
+            if len(four_three_dict) != 0:
+                print(four_three_dict.items())
+                player_key, player_value = max(four_three_dict.items(),
+                                           key=lambda p: p[1])
+                return ['draw', player_key]
+            else:
+                player_key, player_value = max(two_one_zero_dict.items(),
+                                           key=lambda p: p[1])
+                return ['draw', player_key]
         elif location < 0:
             # There is no wining move for player right now.
             self.decide_winner()
+            print('The player lose the game')
             return [self.winner_char]
 
     def find_all_potential_moves(self, simulation_amount):
@@ -819,7 +874,7 @@ class SimpleGoBoard(object):
                            key=lambda item: item[1],
                            reverse=True))
         best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
-        print(win_rate_dictionary)
+        
         #self.board[best_move] = color
         return best_move, win_rate_dictionary[best_move]
 
@@ -839,17 +894,18 @@ class SimpleGoBoard(object):
             made_move_list.append(made_move)
             winner = self.detect_five_in_a_row()
         '''
-        winner = self.detect_five_in_a_row()
+        end, winner = self.check_game_end_gomoku()
+        
         for empty_point in empty_points:
             #self.play_move(empty_point, self.current_player)
             self.board[empty_point] = color
             made_move_list.append(empty_point)
-            winner = self.detect_five_in_a_row()
+            end, winner = self.check_game_end_gomoku()
             if color == BLACK:
                 color = WHITE
             elif color == WHITE:
                 color = BLACK
-            if winner != EMPTY:
+            if winner != None:
                 self.undo_all_move(made_move_list)
                 break
         self.undo_all_move(made_move_list)
